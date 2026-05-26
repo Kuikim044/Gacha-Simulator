@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GachaOps - ระบบวิเคราะห์และจำลองกาชา</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Prompt:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">💎</div>
+        <div>
+          <h1>GachaOps</h1>
+          <p>LiveOps Console</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="#section-settings" class="nav-link">⚙️ <span>ตั้งค่าและไอเทม</span></a>
+        <a href="#section-simulation" class="nav-link">🎮 <span>จำลองการสุ่ม</span></a>
+        <a href="#section-montecarlo" class="nav-link">🧪 <span>วิเคราะห์ความน่าจะเป็น</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div id="validation-indicator" class="status-pill valid">✅ พร้อมใช้งาน</div>
+        <button id="reset-all-btn" class="ghost-btn">🗑️ รีเซ็ตระบบทั้งหมด</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <!-- 1. GACHA SETTINGS & ITEM POOL -->
+      <section id="section-settings" class="content-section">
+        <div class="section-header">
+          <h2>🛠️ 1. ตั้งค่ากาชาและคลังไอเทม</h2>
+          <div class="header-actions">
+            <span class="badge">PRO v1.2</span>
+          </div>
+        </div>
+        
+        <div class="grid-2-1">
+          <div class="panel settings-master-panel">
+            <h3>📊 ตั้งค่าอัตราดรอป (Drop Rate)</h3>
+            <div id="rate-settings" class="settings-form">
+              <!-- Rates injected here -->
+            </div>
+            
+            <hr class="divider">
+            
+            <h3>🛡️ ระบบการันตี (Pity System)</h3>
+            <div class="pity-controls">
+              <div class="toggle-group">
+                <label>เปิดใช้งานระบบการันตี</label>
+                <label class="switch">
+                  <input type="checkbox" id="pity-toggle" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="input-row">
+                <div class="input-group">
+                  <label>จำนวนโรลเพื่อการันตี (Threshold)</label>
+                  <input type="number" id="pity-threshold" value="80" min="1">
+                </div>
+                <div class="input-group">
+                  <label>โอกาสได้ SSR เมื่อการันตี (%)</label>
+                  <input type="number" id="pity-ssr-rate" value="100" min="0" max="100">
+                </div>
+              </div>
+            </div>
+
+            <hr class="divider">
+
+            <h3>💰 กฎด้านเศรษฐกิจ (Economy Rules)</h3>
+            <div class="input-row">
+              <div class="input-group">
+                <label>ราคาต่อการสุ่ม 1 ครั้ง</label>
+                <input type="number" id="price-per-pull" value="160" min="1">
+              </div>
+              <div class="input-group" style="justify-content: flex-end;">
+                <div class="toggle-group" style="margin-bottom: 0; padding: 0; background: none; border: none;">
+                  <label style="margin-right: 10px;">🎁 โบนัสสุ่มฟรี (Free Roll)</label>
+                  <label class="switch">
+                    <input type="checkbox" id="free-roll-toggle" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="input-group">
+              <label>สุ่มฟรีทุกๆ (จำนวนโรลที่จ่ายเงิน)</label>
+              <input type="number" id="free-interval" value="10" min="1">
+            </div>
+          </div>
+
+          <div class="panel item-pool-slave-panel">
+            <h3>✨ เพิ่มไอเทมแบบเร็ว</h3>
+            <div class="quick-add-form" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; flex-shrink: 0;">
+              <input type="text" id="new-item-name" placeholder="ชื่อไอเทม (เช่น ดาบฟีนิกซ์)">
+              <select id="new-item-rarity">
+                <option value="SSR">🟡 SSR (Ultra Rare)</option>
+                <option value="SR">🟣 SR (Super Rare)</option>
+                <option value="R" selected>🔵 R (Rare)</option>
+                <option value="N">⚪ N (Normal)</option>
+              </select>
+              <button id="add-item-btn" class="primary-btn">➕ เพิ่มเข้าคลัง</button>
+            </div>
+            
+            <div class="pool-stats" style="display: flex; justify-content: space-around; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px; margin-bottom: 20px; font-size: 0.8rem; flex-shrink: 0;">
+              <span id="pool-count-ssr" class="rarity-SSR">SSR: 0</span>
+              <span id="pool-count-sr" class="rarity-SR">SR: 0</span>
+              <span id="pool-count-r" class="rarity-R">R: 0</span>
+              <span id="pool-count-n" class="rarity-N">N: 0</span>
+            </div>
+
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ชื่อไอเทม</th>
+                    <th>ระดับ</th>
+                    <th>จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="item-pool-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. LIVE SIMULATION -->
+      <section id="section-simulation" class="content-section">
+        <div class="section-header">
+          <h2>🎰 2. คอนโซลจำลองการสุ่ม</h2>
+        </div>
+
+        <div class="panel simulation-bar">
+          <div class="sim-actions">
+            <button class="quick-pull-btn" data-count="10">🎫 สุ่ม 10 ครั้ง</button>
+            <button class="quick-pull-btn" data-count="100">🎫 สุ่ม 100 ครั้ง</button>
+            <button class="quick-pull-btn" data-count="1000">🔥 สุ่ม 1,000 ครั้ง</button>
+            <div class="manual-pull">
+              <input type="number" id="custom-pull-count" value="1" min="1">
+              <button id="run-custom-sim" class="primary-btn">🕹️ สุ่มเอง</button>
+            </div>
+          </div>
+          <button id="export-pull-csv" class="secondary-btn">📁 Export (CSV)</button>
+        </div>
+
+        <div class="grid-1-2">
+          <div class="panel">
+            <h3>📈 สรุปการสุ่ม</h3>
+            <div id="pull-summary-stats" class="summary-grid">
+              <!-- Stats -->
+            </div>
+            <div id="rarity-chart" class="chart-container">
+              <!-- Tube Charts injected here -->
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>🔍 วิเคราะห์อัตราดรอปจริง</h3>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ระดับ</th>
+                    <th>เป้าหมาย %</th>
+                    <th>จำนวน</th>
+                    <th>จริง %</th>
+                    <th>ส่วนต่าง</th>
+                  </tr>
+                </thead>
+                <tbody id="rarity-analytics-body"></tbody>
+              </table>
+            </div>
+            
+            <h3 style="margin-top: 25px;">📦 รายการไอเทมที่สุ่มได้</h3>
+            <div class="table-scroll" style="max-height: 250px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ชื่อไอเทม</th>
+                    <th>ระดับ</th>
+                    <th>จำนวน</th>
+                    <th>สัดส่วน %</th>
+                  </tr>
+                </thead>
+                <tbody id="item-results-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2-1" style="margin-top: 30px;">
+          <div class="panel">
+            <h3>📑 ประวัติการสุ่ม (Pull History)</h3>
+            <div id="pull-history-list" class="history-list">
+              <!-- Pull History cards -->
+            </div>
+          </div>
+          <div class="panel">
+            <h3>🖥️ บันทึกการสุ่มรายครั้ง (Last 50)</h3>
+            <div id="pull-log-console" class="log-console">
+              <!-- Logs -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. MONTE CARLO / PLAYER POV -->
+      <section id="section-montecarlo" class="content-section">
+        <div class="section-header">
+          <h2>🧬 3. วิเคราะห์ความน่าจะเป็น (Monte Carlo)</h2>
+        </div>
+
+        <div class="grid-1-2">
+          <div class="panel">
+            <h3>⚙️ พารามิเตอร์การจำลอง</h3>
+            <div class="input-row">
+              <div class="input-group">
+                <label>งบประมาณผู้เล่น</label>
+                <input type="number" id="mc-budget" value="16000" min="0">
+              </div>
+              <div class="input-group">
+                <label>ราคาต่อรอบ</label>
+                <input type="number" id="mc-price" value="160" min="1">
+              </div>
+            </div>
+            <div class="input-group">
+              <label>จำนวนรอบที่จำลอง (Trials)</label>
+              <input type="number" id="mc-trials" value="5000" min="1" max="10000">
+              <small>🚀 แนะนำ 5,000 รอบเพื่อความแม่นยำสูงสุด</small>
+            </div>
+            <button id="run-mc-engine" class="primary-btn large">⚡ รันการวิเคราะห์ระดับสูง</button>
+            <button id="export-mc-csv" class="secondary-btn" style="margin-top: 15px; width: 100%;">📊 Export สรุปผล MC</button>
+          </div>
+
+          <div class="panel">
+            <h3>📝 ผลลัพธ์เชิงสถิติ</h3>
+            <div id="mc-stats-table" class="mc-summary-container">
+              <!-- MC Summary Table -->
+            </div>
+            <div id="ai-insight-box" class="insight-box">
+              <div class="insight-header">🤖 บทวิเคราะห์จาก AI System</div>
+              <div id="ai-insight-content" class="insight-text">
+                กรุณาตั้งค่าและรันการจำลองเพื่อเริ่มต้นการวิเคราะห์ข้อมูล...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 30px;">
+          <h3>🔬 ประวัติการวิเคราะห์ (Simulation History)</h3>
+          <div id="mc-history-list" class="history-list">
+            <!-- MC History cards -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="data/initial-config.js"></script>
+  <script src="js/simulator-logic.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
